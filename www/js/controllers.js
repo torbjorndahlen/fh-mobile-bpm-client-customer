@@ -1,6 +1,6 @@
 angular.module('starter.controllers', [])
 
-.controller('DashCtrl', function($rootScope, $scope, $ionicLoading, $ionicSideMenuDelegate, $ionicModal, $timeout) {
+.controller('DashCtrl', function($http, $rootScope, $scope, $ionicLoading, $ionicSideMenuDelegate, $ionicModal, $timeout) {
 
   $scope.date = new Date();
 
@@ -20,7 +20,7 @@ angular.module('starter.controllers', [])
       window.localStorage.setItem("customer_bpm_username", $scope.credentials.username);
       window.localStorage.setItem("customer_bpm_password", $scope.credentials.password);
 
-      $timeout(function() {          
+      $timeout(function() {
           $scope.login.hide();
       }, 1000);
     } else{
@@ -121,6 +121,9 @@ angular.module('starter.controllers', [])
     // Show loading indicator
     $scope.show();
 
+  
+
+/*
     // Call MBaaS
     $fh.cloud({
       "path": "/pricing/calculate",
@@ -168,6 +171,7 @@ angular.module('starter.controllers', [])
       // Clear loading
       $scope.hide();
     });
+*/
 
   }
 
@@ -183,6 +187,46 @@ angular.module('starter.controllers', [])
 
     // check if userInput is defined
     if ($scope.case.firstname && $scope.case.lastname && $scope.case.request) {
+
+      var req = {
+        method: 'POST',
+        url: "http://localhost:8000/bpm/startProcess",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: {
+          "params": {
+            "username": window.localStorage.getItem("customer_bpm_username"),
+            "password": window.localStorage.getItem("customer_bpm_password")
+          },
+          "firstname": $scope.case.firstname,
+          "lastname": $scope.case.lastname,
+          "request": $scope.case.request,
+          // set to show the creator of the request in the employee app
+          "username": window.localStorage.getItem("customer_bpm_username")
+          }
+         }
+
+         console.log('/startProcess ' + JSON.stringify(req.data));
+
+      $http(req).then(
+          function successCallback(response) {
+            console.log('status: ' + response.status);
+            console.log('data: ' + JSON.stringify(response.data));
+              $scope.noticeMessage = null;
+              // Clear loading
+              $scope.hide();
+              $scope.modal.hide();
+          },
+          function errorCallback(response) {
+              console.log('fail: ' + response.status + ' ' + response.statusText);
+              $scope.noticeMessage = "$http failed. Error: " + response.statusText + ' ' + response.statusText;
+              // Clear loading
+              $scope.hide();
+          }
+      );
+
+      /*
       $fh.cloud({
         "path": "/bpm/startProcess",
         "method": "POST",
@@ -224,6 +268,8 @@ angular.module('starter.controllers', [])
         // Clear loading
         $scope.hide();
       });
+*/
+
     } else {
       $scope.noticeMessage  = "Please fill out the form";
       // Clear loading
@@ -232,6 +278,41 @@ angular.module('starter.controllers', [])
   }
 
     $scope.getProcess = function(){
+
+      var req = {
+        method: 'POST',
+        url: "http://localhost:8000/bpm/getProcessInstance",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: {
+          "params": {
+            "username": window.localStorage.getItem("customer_bpm_username"),
+            "password": window.localStorage.getItem("customer_bpm_password")
+          }
+          }
+         }
+
+         console.log('/getProcess ' + JSON.stringify(req.data));
+
+      $http(req).then(
+          function successCallback(response) {
+            console.log('status: ' + response.status);
+            console.log('data: ' + JSON.stringify(response.data));
+              $scope.noticeMessage = null;
+              $scope.processName = response.data.name;
+          },
+          function errorCallback(response) {
+              console.log('fail: ' + response.status + ' ' + response.statusText);
+              $scope.noticeMessage = "$http failed. Error: " + response.statusText + ' ' + response.statusText;
+              // Clear loading
+              $scope.hide();
+          }
+      );
+
+
+
+      /*
       $fh.cloud({
         "path": "/bpm/getProcessInstance",
         "method": "POST",
@@ -260,6 +341,11 @@ angular.module('starter.controllers', [])
         $scope.processName = null;
         $scope.noticeMessage = "$fh.cloud failed. Error: " + JSON.stringify(err);
       });
+*/
+
+
+
+
       // Stop the ion-refresher from spinning
       $scope.$broadcast('scroll.refreshComplete');
     }
@@ -286,7 +372,7 @@ angular.module('starter.controllers', [])
 
 })
 
-.controller('ProcessCtrl', function($scope, $ionicLoading) {
+.controller('ProcessCtrl', function($http, $scope, $ionicLoading) {
 
     // Show loading...
     $scope.show = function() {
@@ -308,6 +394,67 @@ angular.module('starter.controllers', [])
       }
 
       function allProcessInstances(){
+
+        var req = {
+          method: 'POST',
+          url: "http://localhost:8000/bpm/getProcessInstanceList",
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          data: {
+            "params": {
+              "username": window.localStorage.getItem("customer_bpm_username"),
+              "password": window.localStorage.getItem("customer_bpm_password")
+            }
+            }
+           }
+
+           console.log('/getProcessInstanceList ' + JSON.stringify(req.data));
+
+        $http(req).then(
+            function successCallback(response) {
+              console.log('status: ' + response.status);
+              //console.log('data: ' + JSON.stringify(response.data));
+                $scope.noticeMessage = null;
+                $scope.processInstances = response.data.processInstanceInfoList;
+                if($scope.processInstances.length == 0){
+                  $scope.noticeMessage  = 'No more requests are open';
+                }else{
+                  for (i = 0; i < $scope.processInstances.length; i++) {
+                    //console.log('processInstanceList[' + i + ']: ' + JSON.stringify($scope.processInstances[i]['process-instance']));
+                    //console.log('processInstanceList[' + i + ']: ' + JSON.stringify($scope.processInstances[i]['variables'][0]));
+                    //console.log('processInstanceList[' + i + ']: ' + JSON.stringify($scope.processInstances[i]['variables'][0].value.value));
+
+                    for(j = 0; j < $scope.processInstances[i]['variables'].length; j++) {
+                      console.log('processInstanceList[' + i + '].variables[' + j + ']: ' + JSON.stringify($scope.processInstances[i]['variables'][j]));
+                      if($scope.processInstances[i]['variables'][j].name === 'initiator') {
+                        $scope.processInstances[i]['process-instance']['initiator'] = $scope.processInstances[i]['variables'][j].value.value;
+                      }
+
+                    }
+
+                    if($scope.processInstances[i]['process-instance']['state'] == 1){
+                      $scope.processInstances[i]['process-instance']['state'] = 'Active';
+                    }else if($scope.processInstances[i]['process-instance']['state'] == 2){
+                      $scope.processInstances[i]['process-instance']['state'] = 'Completed';
+                    }else if($scope.processInstances[i]['process-instance']['state'] == 3){
+                      $scope.processInstances.splice(i,1);
+                    }
+                  }
+                  //$scope.processInstances = res.processInstanceInfoList;
+                }
+                $scope.hide();
+            },
+            function errorCallback(response) {
+                console.log('fail: ' + response.status + ' ' + response.statusText);
+                $scope.noticeMessage = "$http failed. Error: " + response.statusText + ' ' + response.statusText;
+                // Clear loading
+                $scope.hide();
+            }
+        );
+
+
+/*
           $fh.cloud({
             "path": "/bpm/getProcessInstanceList",
             "method": "POST",
@@ -350,6 +497,10 @@ angular.module('starter.controllers', [])
             // Clear loading
             $scope.hide();
           });
+*/
+
+
+
           // Stop the ion-refresher from spinning
           $scope.$broadcast('scroll.refreshComplete');
 
@@ -357,7 +508,7 @@ angular.module('starter.controllers', [])
 
 })
 
-.controller('ProcessDetailCtrl', function($scope, $ionicLoading, $stateParams) {
+.controller('ProcessDetailCtrl', function($http, $scope, $ionicLoading, $stateParams) {
 
     // Show loading...
     $scope.show = function() {
@@ -378,6 +529,61 @@ angular.module('starter.controllers', [])
   }
 
   function loadProcessContent(){
+
+    var req = {
+      method: 'POST',
+      url: "http://localhost:8000/bpm/loadProcessContent",
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: {
+        "params": {
+          "username": window.localStorage.getItem("customer_bpm_username"),
+          "password": window.localStorage.getItem("customer_bpm_password")
+        },
+        "processId": $stateParams.processId
+        }
+       }
+
+       console.log('/loadProcessContentProcess ' + JSON.stringify(req.data));
+
+    $http(req).then(
+        function successCallback(response) {
+            console.log('status: ' + response.status);
+            console.log('data: ' + JSON.stringify(response.data));
+            var res = response.data;
+            $scope.noticeMessage = null;
+            $scope.processContentList = res.processInstanceInfoList;
+            for (i = 0; i < res.processInstanceInfoList.length; i++) {
+              if(res.processInstanceInfoList[i]['process-instance']['id'] == $stateParams.processId){
+                for(x = 0; x < res.processInstanceInfoList[i]['variables'].length; x++){
+                  if(res.processInstanceInfoList[i]['variables'][x]['name'] == 'firstname'){
+                      $scope.firstname = res.processInstanceInfoList[i]['variables'][x]['value']['value']
+                  }else if(res.processInstanceInfoList[i]['variables'][x]['name'] == 'lastname'){
+                      $scope.lastname = res.processInstanceInfoList[i]['variables'][x]['value']['value']
+                  }else if(res.processInstanceInfoList[i]['variables'][x]['name'] == 'request'){
+                      $scope.request = res.processInstanceInfoList[i]['variables'][x]['value']['value']
+                  }else if(res.processInstanceInfoList[i]['variables'][x]['name'] == 'decision'){
+                      $scope.decision = res.processInstanceInfoList[i]['variables'][x]['value']['value']
+                  }else if(res.processInstanceInfoList[i]['variables'][x]['name'] == 'decisioncomment'){
+                      $scope.comment = res.processInstanceInfoList[i]['variables'][x]['value']['value']
+                  }
+                }
+              }
+            }
+            $scope.hide();
+        },
+        function errorCallback(response) {
+            console.log('fail: ' + response.status + ' ' + response.statusText);
+            $scope.noticeMessage = "$http failed. Error: " + response.statusText + ' ' + response.statusText;
+            // Clear loading
+            $scope.hide();
+        }
+    );
+
+
+
+    /*
     $fh.cloud({
       "path": "/bpm/loadProcessContent",
       "method": "POST",
@@ -425,6 +631,9 @@ angular.module('starter.controllers', [])
       $scope.noticeMessage = "$fh.cloud failed. Error: " + JSON.stringify(err);
       $scope.hide();
     });
+*/
+
+
     // Stop the ion-refresher from spinning
     $scope.$broadcast('scroll.refreshComplete');
   };

@@ -218,8 +218,9 @@
 }
 
 .loginLogo{
-  padding-top: 25%;
-  padding-left: 37%;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .loginHeader{
@@ -241,5 +242,5 @@
 }
 
 ion-tabs.tabs-color-active-positive .tab-item.tab-item-active, ion-tabs.tabs-color-active-positive .tab-item.active, ion-tabs.tabs-color-active-positive .tab-item.activated {
-    color: #444; 
+    color: #444;
 }

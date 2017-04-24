@@ -3,7 +3,7 @@
   "appkey": "6fac234f653c0165676e96e0945bfa206cd45bcf",
   "apptitle": "Customer App",
   "connectiontag": "0.0.9",
-  "host": "https://sfaulhab.us.demos.redhatmobile.com",
+  "host": "http://127.0.0.1:8003",
   "ios": {
     "variantID": "5a9443b1-7250-42f3-872f-4633b27b2ef5",
     "variantSecret": "9453ca9c-c8ab-4ea0-8aab-36518fae9257"
